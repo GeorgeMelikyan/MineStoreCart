@@ -12,13 +12,9 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
-import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import java.lang.reflect.Field;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.*;
 
 public class Cart implements CommandExecutor {
@@ -46,17 +42,39 @@ public class Cart implements CommandExecutor {
                             "product_types.command, purchase.purchase_time, purchase.gived, purchase.amount FROM " +
                             "`purchase` " + "INNER JOIN product ON purchase.product_id = product.id INNER JOIN " +
                             "product_types ON product" + ".product_types_id = product_types.id WHERE purchase.player "
-                            + "= '%s'", p.getDisplayName()));
+                            + "= '%s' ORDER BY purchase.purchase_time", p.getDisplayName()));
 
-            Inventory i = Bukkit.createInventory(null, 3 * 9, config.getTitle());
+            Inventory inventory = Bukkit.createInventory(null, 3 * 9, Chat.color(config.getTitle()));
 
-            int position;
             while (resultSet.next()) {
-                position = resultSet.getRow();
-                createProduct(i, resultSet.getString("product.name"), config.getRank_lore(), position);
+                int position = resultSet.getRow() - 1;
+                String product_type = resultSet.getString("product_types.name");
+                String texture = null;
+                String name = resultSet.getString("product.name");
+                Timestamp date = resultSet.getTimestamp("purchase.purchase_time");
+                List<String> lore = new ArrayList<>();
+
+                switch (product_type) {
+                    case "rank":
+                        texture = "http://textures.minecraft" +
+                                ".net/texture/734fb3203233efbae82628bd4fca7348cd071e5b7b52407f1d1d2794e31799ff";
+                        lore = replaceLorePlaceholder(config.getRank_lore(), date, "1520");
+                        break;
+                    case "case":
+                        texture = "http://textures.minecraft" +
+                                ".net/texture/b2c5f7ac706b2e8a878ebf972b07f3d36449ab70b09acd973eeabb0d5fc4a6b4";
+                        lore = replaceLorePlaceholder(config.getCase_lore(), date, "1520");
+                        break;
+                    case "money":
+                        texture = "http://textures.minecraft" +
+                                ".net/texture/c8ea7933581ee9fb400f39044d3015ca0d43bb6e72fc9267c7fd1361f68ff12b";
+                        lore = replaceLorePlaceholder(config.getMoney_lore(), date, "1520");
+                        break;
+                }
+                createProduct(inventory, name, lore, texture, position);
             }
 
-            p.openInventory(i);
+            p.openInventory(inventory);
 
             statement.close();
             connection.close();
@@ -68,19 +86,40 @@ public class Cart implements CommandExecutor {
         return true;
     }
 
-    private void createProduct(Inventory i, String item_name, List<String> item_lore, int pos) {
+    private List<String> replaceLorePlaceholder(List<String> lore, Timestamp date, String price) {
+        List<String> result = new ArrayList<>();
+
+        for (String line : lore) {
+            String new_line = line.replaceAll("<date>", date.toString());
+            new_line = new_line.replaceAll("<price>", price);
+            result.add(new_line);
+        }
+
+        return result;
+    }
+
+    private void createProduct(Inventory i, String item_name, List<String> item_lore, String texture, int pos) {
         ItemStack product = new ItemStack(Material.SKULL_ITEM, 1, (short) 3);
+
+        //Create lore & name
         ItemMeta meta = product.getItemMeta();
-        meta.setDisplayName(item_name);
-        ArrayList<String> lore = new ArrayList<>(item_lore);
+        meta.setDisplayName(Chat.color(item_name));
+        ArrayList<String> lore = new ArrayList<>(Chat.color(item_lore));
         meta.setLore(lore);
         product.setItemMeta(meta);
 
+        //Create skull texture
         SkullMeta skullMeta = (SkullMeta) product.getItemMeta();
+        setSkullDesign(skullMeta, texture);
+        product.setItemMeta(skullMeta);
 
+        i.setItem(pos, product);
+    }
+
+    private void setSkullDesign(SkullMeta skullMeta, String url) {
         GameProfile profile = new GameProfile(UUID.randomUUID(), null);
-        byte[] encodedData = Base64.getEncoder().encode(String.format("{textures:{SKIN:{url:\"%s\"}}}", "http" +
-                "://textures.minecraft.net/texture/515dcb2da02cf734829e1e273e3025617d8071516f953251b52545da8d3e8db8").getBytes());
+        byte[] encodedData =
+                Base64.getEncoder().encode(String.format("{textures:{SKIN:{url:\"%s\"}}}", url).getBytes());
         profile.getProperties().put("textures", new Property("textures", new String(encodedData)));
         Field profileField;
         try {
@@ -90,24 +129,5 @@ public class Cart implements CommandExecutor {
         } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException e1) {
             e1.printStackTrace();
         }
-
-        product.setItemMeta(skullMeta);
-
-        i.setItem(pos, product);
     }
-
-    public static GameProfile getNonPlayerProfile(String skinURL, boolean randomName) {
-        GameProfile newSkinProfile = new GameProfile(UUID.randomUUID(), randomName ? getRandomString(16) : null);
-        newSkinProfile.getProperties().put("textures", new Property("textures",
-                Base64Coder.encodeString("{textures" + ":{SKIN:{url:\"" + skinURL + "\"}}}")));
-        return newSkinProfile;
-    }
-
-    public static String getRandomString(int length) {
-        StringBuilder b = new StringBuilder(length);
-        for (int j = 0; j < length; j++)
-            b.append(chars.charAt(random.nextInt(chars.length())));
-        return b.toString();
-    }
-
 }

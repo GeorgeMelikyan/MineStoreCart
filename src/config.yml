@@ -17,22 +17,24 @@ settings:
 #Create your own experience with MineStore
 cart:
   #Cart title
-  title: "Корзина покупок"
+  title: "&8(&cAdventures&8) &9Корзина покупок"
 
   #Rank item settings
   rank-name: "Привилегия"
   rank-lore:
+    - "&aЭто корзина"
+    - "вот так вот"
+    - "Дата покупки: <date>"
+    - "Цена: <price>"
+
+  #Case item settings
+  case-name: "Бокс"
+  case-lore:
     - "Это корзина"
     - "вот так вот"
 
-  #Package item settings
-  package-name: "Бокс"
-  package-lore:
-    - "Это корзина"
-    - "вот так вот"
-
-  #Token item settings
-  token-name: "Токен"
-  token-lore:
+  #Money item settings
+  money-name: "Токен"
+  money-lore:
     - "Это корзина"
     - "вот так вот"
