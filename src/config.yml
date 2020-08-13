@@ -1,0 +1,38 @@
+###
+###  MINESTORE - Just Do Minecraft Donation
+###        Created by JoraMelikyan
+###             Adventures.Su
+###
+
+#Main settings
+settings:
+  #Enable mysql connection
+  mysql:
+    host: localhost
+    port: 3306
+    database: minestore
+    username: store
+    password: rdgm2020
+
+#Create your own experience with MineStore
+cart:
+  #Cart title
+  title: "Корзина покупок"
+
+  #Rank item settings
+  rank-name: "Привилегия"
+  rank-lore:
+    - "Это корзина"
+    - "вот так вот"
+
+  #Package item settings
+  package-name: "Бокс"
+  package-lore:
+    - "Это корзина"
+    - "вот так вот"
+
+  #Token item settings
+  token-name: "Токен"
+  token-lore:
+    - "Это корзина"
+    - "вот так вот"

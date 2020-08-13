@@ -1,0 +1,8 @@
+name: MineStoreCart
+main: com.adventures.minestore.cart.MineStore
+version: 1.0
+author: JoraMelikyan
+website: adventures.su
+commands:
+  cart:
+    default: true
